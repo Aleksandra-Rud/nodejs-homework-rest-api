@@ -15,11 +15,11 @@ const joiSchema = Joi.object({
 
 router.get("/", async (req, res, next) => {
   try {
-    const contact = await contactsOperations.listContacts();
-    if (!contact) {
+    const contacts = await contactsOperations.listContacts();
+    if (!contacts) {
       throw new NotFound();
     }
-    res.json(contact);
+    res.json(contacts);
   } catch (error) {
     next(error);
   }
