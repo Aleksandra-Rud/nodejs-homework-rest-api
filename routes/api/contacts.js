@@ -1,24 +1,16 @@
 const express = require("express");
 const { NotFound, BadRequest } = require("http-errors");
+
 const router = express.Router();
-const Joi = require("joi");
+// const Joi = require("joi");
 
-const contactsOperations = require("../../model");
-
-const joiSchema = Joi.object({
-  name: Joi.string().required(),
-  phone: Joi.string().required(),
-  email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
-    .required(),
-});
+const { joiSchema } = require("../../model/contacts");
+const { Contact } = require("../../model");
+// const contactsOperations = require("../../model");
 
 router.get("/", async (req, res, next) => {
   try {
-    const contacts = await contactsOperations.listContacts();
-    if (!contacts) {
-      throw new NotFound();
-    }
+    const contacts = await Contact.find();
     res.json(contacts);
   } catch (error) {
     next(error);
@@ -28,7 +20,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:contactId", async (req, res, next) => {
   const { contactId } = req.params;
   try {
-    const contacts = await contactsOperations.getById(contactId);
+    const contacts = await Contact.findById(contactId);
     if (!contacts) {
       throw new NotFound();
     }
@@ -44,9 +36,18 @@ router.post("/", async (req, res, next) => {
     if (error) {
       throw new BadRequest(error.message);
     }
-    const newContact = await contactsOperations.add(req.body);
-    res.status(201).json(newContact);
+    const newContact = await Contact.create(req.body);
+    res.status(201).json({
+      status: "success",
+      code: 201,
+      data: {
+        newContact,
+      },
+    });
   } catch (error) {
+    if (error.message.includes("Cast to ObjectId failed")) {
+      error.status = 400;
+    }
     next(error);
   }
 });
@@ -57,24 +58,54 @@ router.put("/:id", async (req, res, next) => {
     if (error) {
       throw new BadRequest(error.message);
     }
-    const { id } = req.params;
-    const updateContact = await contactsOperations.updateById({
-      id,
-      ...req.body,
+    const { contactId } = req.params;
+    const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {
+      new: true,
     });
     if (!updateContact) {
       throw new NotFound();
     }
     res.json(updateContact);
   } catch (error) {
+    if (error.message.includes("validation failed")) {
+      error.status = 404;
+    }
+    next(error);
+  }
+});
+
+router.patch("/api/contacts/:contactId/favorite", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+    const updateStatusContact = await Contact.findByIdAndUpdate(
+      contactId,
+      { favorite },
+      {
+        new: true,
+      }
+    );
+    if (!updateStatusContact) {
+      throw new NotFound("missing field favourite");
+    }
+    res.json({
+      status: "success",
+      code: 200,
+      data: {
+        updateStatusContact,
+      },
+    });
+  } catch (error) {
+    error.status = 404;
+    error.message = "Not found";
     next(error);
   }
 });
 
 router.delete("/:contactId", async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const deleteProduct = await contactsOperations.removeById(id);
+    const { contactId } = req.params;
+    const deleteProduct = await Contact.findByIdAndRemove(contactId);
     if (!deleteProduct) {
       throw new NotFound();
     }
