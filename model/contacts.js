@@ -1,22 +1,29 @@
 const { Schema, model } = require("mongoose");
 const Joi = require("joi");
 
-const contactSchema = Schema({
-  name: {
-    type: String,
-    required: [true, "Set name for contact"],
+const contactSchema = Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Set name for contact"],
+    },
+    email: {
+      type: String,
+    },
+    phone: {
+      type: String,
+    },
+    favorite: {
+      type: Boolean,
+      default: false,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+    },
   },
-  email: {
-    type: String,
-  },
-  phone: {
-    type: String,
-  },
-  favorite: {
-    type: Boolean,
-    default: false,
-  },
-});
+  { versionKey: false, timestamps: true }
+);
 
 const joiSchema = Joi.object({
   name: Joi.string().alphanum().min(3).max(30).required(),
@@ -24,7 +31,8 @@ const joiSchema = Joi.object({
     minDomainSegments: 2,
     tlds: { allow: ["com", "net"] },
   }),
-  phone: Joi.string().required(),
+  phone: Joi.string().min(7).required(),
+  favorite: Joi.bool,
 });
 
 const Contact = model("contact", contactSchema);
