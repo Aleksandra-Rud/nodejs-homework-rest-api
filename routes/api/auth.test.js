@@ -2,16 +2,6 @@ const mongoose = require("mongoose");
 const request = require("supertest");
 require("dotenv").config();
 
-// const {
-//   describe,
-//   beforeAll,
-//   afterAll,
-//   beforeEach,
-//   afterEach,
-//   test,
-//   expect,
-// } = require("jest");
-
 const app = require("../../app");
 
 const { DB_TEST_HOST } = process.env;
